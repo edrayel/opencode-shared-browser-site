@@ -1,0 +1,106 @@
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import Docs from '../../layouts/Docs.astro'
+import Callout from '../../components/Callout.astro'
+---
+
+<Docs
+  title="Limitations"
+  description="Known limitations of sharing one browser across opencode instances, including two that are inherent and cannot be guarded away."
+>
+  <p>
+    Listed here rather than buried. Two of these are inherent to sharing one
+    browser process and no amount of guarding removes them — you are trading
+    isolation for a shared session, and it is worth knowing the price.
+  </p>
+
+  <h2>Inherent to sharing</h2>
+
+  <h3>Storage is one bucket</h3>
+  <p>
+    Cookies, <code>localStorage</code> and IndexedDB are shared across every
+    instance attached to the browser. Two instances on the same origin will
+    clobber each other's state. This was measured, not assumed:
+  </p>
+  <div class="not-prose my-5">
+    <Callout label="measured" tone="measured">
+      Two independent CDP clients each opened a tab. Both reported all tabs, and a
+      value one wrote in <code>font-mono text-xs">localStorage</code> was readable
+      by the other on the same origin.
+    </Callout>
+  </div>
+  <p>
+    Unrelated domains are unaffected in practice — the clash needs the same
+    origin. But same-origin concurrency is genuinely unsafe, and no guard
+    arbitrates storage writes.
+  </p>
+
+  <h3>The profile has real credentials</h3>
+  <p>
+    Every attached instance can act as you: read mail, send as your account,
+    authenticate anywhere you are signed in. This is the point of the tool and
+    also its risk.
+  </p>
+  <ul>
+    <li>Use a <strong>dedicated profile</strong>, not your daily browser profile.</li>
+    <li>
+      Be deliberate about which repos get an agent with browser access. An agent
+      running untrusted code is an agent holding your credentials.
+    </li>
+    <li>Remember the same applies to any tool with network or shell access.</li>
+  </ul>
+
+  <h2>Guard limitations</h2>
+
+  <h3>A blank tab mid-navigation is closable</h3>
+  <p>
+    <code>about:blank</code> is treated as inert, because the browser always keeps
+    one seed blank tab that no session claims — counting it as foreign would deny
+    every close permanently, which would make the guard useless.
+  </p>
+  <p>
+    The cost: if another instance is mid-navigation, its tab can briefly read as
+    <code>about:blank</code> and become closable. The window is narrow, but it is
+    real, and the guard cannot distinguish "seed tab" from "navigating tab".
+  </p>
+
+  <h3>Same-URL tabs are indistinguishable</h3>
+  <p>
+    Ownership is tracked by URL, not by target id. Two tabs on the identical URL
+    cannot be told apart, so a same-site instance could have its tab closed. In
+    practice this needs two agents on the exact same page at once.
+  </p>
+
+  <h3>Closes are denied while any foreign tab exists</h3>
+  <p>
+    This is the guard working as intended, but it is also a real limit on
+    convenience: if another instance is active, you cannot close anything at all,
+    including your own tabs. Tidy up when you are alone.
+  </p>
+
+  <h2>Operational</h2>
+
+  <h3>One browser, one process</h3>
+  <p>
+    If the shared browser is not running, every attached instance fails with a
+    connection error until it is back. The wrapper starts it automatically on the
+    next MCP spawn, but opencode does not retry an MCP that failed during startup —
+    a restart is needed for the tools to reappear.
+  </p>
+
+  <h3>Linux and macOS only</h3>
+  <p>
+    The launcher shells out to POSIX tools and passes
+    <code>--no-sandbox</code>, which is not something to ship to untrusted
+    desktops. It is intended for your own machine.
+  </p>
+
+  <h3>Browser cache coupling</h3>
+  <p>
+    The launcher resolves the newest full Chromium in
+    <code>~/.cache/ms-playwright</code> at launch. Upgrading Playwright can
+    therefore change which binary runs. If the MCP's own bundled revision differs
+    from what is in the cache, pass <code>--executable-path</code> explicitly.
+  </p>
+</Docs>

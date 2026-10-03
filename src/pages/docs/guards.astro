@@ -1,0 +1,91 @@
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import Docs from '../../layouts/Docs.astro'
+import GuardTable from '../../components/GuardTable.astro'
+import CodeBlock from '../../components/CodeBlock.astro'
+---
+
+<Docs
+  title="Guards"
+  description="Every rule the browser-guard plugin enforces, why each one exists, and why tab ownership cannot be verified per tab."
+>
+  <p>
+    The guard hooks <code>tool.execute.before</code> and throws. A denied call
+    cannot be reasoned past, which is the point: instructions in
+    <code>AGENTS.md</code> asking an agent to be careful are not enforcement.
+  </p>
+
+  <h2>The rules</h2>
+  <GuardTable />
+
+  <h2>Why ownership cannot be checked per tab</h2>
+  <p>
+    The obvious implementation is: keep a list of tabs this session opened, then
+    refuse to close anything not on it. That silently closes the wrong tab,
+    because the MCP's tab index and CDP's target list are not the same ordering.
+  </p>
+  <CodeBlock
+    lang="text"
+    code={`two tabs, two orderings
+
+MCP reports        CDP /json/list
+[0] pricing        [0] about
+[1] about          [1] pricing`}
+  />
+  <p>
+    Looking an MCP index up in the CDP array validates whichever tab happens to
+    sit at that position in the <em>other</em> list. Our first version did
+    exactly this and closed an unowned <code>about:blank</code> while its own log
+    reported closing an owned one.
+  </p>
+  <p>
+    <code>browser_tabs close</code> accepts no target ID, so there is no way to
+    address one specific tab and prove it is yours. The guard's answer is to allow
+    a close only when every live tab is either claimed by this session or inert —
+    then whatever closes is ours by definition. Conservative, but never wrong.
+  </p>
+
+  <h2>What a denial looks like</h2>
+  <CodeBlock
+    lang="text"
+    code={`BLOCKED by browser-guard: 2 tab(s) here are not owned by this
+session (http://localhost:3000, http://localhost:3001), so they belong to
+another opencode instance. The MCP's tab index does not map reliably onto a
+CDP target, so a close could destroy another instance's work. Close tabs only
+when you are the sole instance using this browser; otherwise leave your tabs
+open for the user to tidy.`}
+  />
+  <p>
+    Denials explain themselves rather than just refusing, because the legitimate
+    response is usually to stop tidying up, not to retry.
+  </p>
+
+  <h2>Claim expiry</h2>
+  <p>
+    Ownership lives only in the agent process. A claim from a session that has
+    since exited would otherwise block closes forever, with no way to clear it. So
+    claims age out after <code>BROWSER_GUARD_TTL_MS</code> (15 minutes by
+    default) and the tab counts as unowned again.
+  </p>
+  <p>
+    The direction is deliberate: an expired claim becomes <em>foreign</em>, not
+    <em>ours</em>. A stale claim must never be the justification for closing
+    something.
+  </p>
+
+  <h2>Fails closed</h2>
+  <p>
+    If CDP cannot be reached, live tabs cannot be enumerated, so no close can be
+    verified. The guard denies rather than allowing on a guess. Restart the
+    browser with <code>~/bin/chrome-cdp-profile</code> rather than working around
+    it.
+  </p>
+
+  <h2>Audit log</h2>
+  <p>
+    Every allow and deny is appended to
+    <code>~/.local/share/opencode/mcp-logs/browser-guard.log</code> with a
+    timestamp and the session id.
+  </p>
+</Docs>

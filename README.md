@@ -1,43 +1,86 @@
-# Astro Starter Kit: Minimal
+# opencode-shared-browser — site
 
-```sh
-pnpm create astro@latest -- --template minimal
+Marketing and documentation site for
+[opencode-shared-browser](https://github.com/edrayel/opencode-shared-browser),
+the plugin that lets several opencode instances drive one signed-in Chrome.
+
+## Stack
+
+Astro 7 with Tailwind CSS v4. Static output, no client framework, no runtime
+JavaScript unless a page earns it.
+
+The design system is the **Vercel Geist** one — radius 0, no shadows, hairline
+borders carrying all elevation, monochrome first, colour only where it carries
+meaning. Two deliberate deviations, both documented in
+`src/styles/global.css`: dark is the default surface rather than light, and
+there are two semantic accents (`allow` / `deny`) rather than one brand accent,
+because the product's whole vocabulary is allow versus deny.
+
+Type is Geist Sans and Geist Mono, self-hosted via `@fontsource` (OFL-1.1).
+
+## Commands
+
+```bash
+pnpm install
+pnpm dev        # dev server
+pnpm build      # static build to dist/
+pnpm preview    # serve the built output
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Layout
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```
+src/
+├─ styles/global.css     design tokens (@theme, OKLCH) + base styles
+├─ layouts/
+│  ├─ Base.astro         head, meta, header, footer
+│  └─ Docs.astro        docs shell with side navigation
+├─ components/           CodeBlock, GuardTable, Callout
+├─ data/guards.ts        guard rules, single source for the table
+└─ pages/
+   ├─ index.astro        landing
+   └─ docs/              install, guards, limitations
+scripts/generate-assets.py
+assets/source/logo.jpg   committed so assets stay reproducible
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Brand assets
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Icons and the social card are generated, not hand-made:
 
-Any static assets, like images, can be placed in the `public/` directory.
+```bash
+python3 scripts/generate-assets.py
+```
 
-## 🧞 Commands
+Requires Pillow, cairosvg and fontTools. Two things it does that are worth
+knowing before changing it:
 
-All commands are run from the root of the project, from a terminal:
+- **The mark's bounding box is found by luminance profiles**, not a fixed crop.
+  The logo's field is a gradient, so thresholding on distance-from-corner finds
+  nothing.
+- **`favicon.svg` is a simplified two-ring silhouette**, not the detailed
+  render, which is illegible below about 32px. The 16/32px PNGs and the `.ico`
+  are rasterised from that simplified mark; 48px and the 180px touch icon keep
+  the detailed version. Geometry was compared at 16/32/48px.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+The matting thresholds for lifting the mark off its own navy are measured, not
+guessed — background pixels sit at distance 4–60 from the fill while ring
+surfaces start near 70. An earlier guess at 16/30 kept the background opaque and
+left a visible tile.
 
-## 👀 Want to learn more?
+## Site URL
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+`astro.config.mjs` reads `SITE_URL`, falling back to a placeholder. Override it
+in the deploy environment so canonical URLs, the sitemap and `og:image` resolve
+against the real domain.
+
+## Content
+
+Copy is drawn from the plugin's own `README.md` and `docs/`. The limitations
+page is deliberately prominent: two of those limits are inherent to sharing one
+browser process and cannot be guarded away, and a paying user should read that
+before they find it themselves.
+
+## License
+
+Apache-2.0. The Geist typefaces are OFL-1.1, © Vercel.

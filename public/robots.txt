@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Nothing here is private, but there is no value in indexing the 404 surface.
+Disallow: /404.html

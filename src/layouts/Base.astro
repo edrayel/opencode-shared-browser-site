@@ -31,12 +31,13 @@ const OG = new URL('/og.png', Astro.site ?? 'https://opencode-shared-browser.dev
     <link rel="shortcut icon" href="/favicon.ico" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={Astro.url.pathname} />
+    <!-- Absolute, not Astro.url.pathname: a relative canonical is not valid. -->
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={Astro.url.pathname} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
     <meta property="og:image" content={OG} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -44,7 +45,6 @@ const OG = new URL('/og.png', Astro.site ?? 'https://opencode-shared-browser.dev
     <meta name="twitter:image" content={OG} />
 
     <meta name="theme-color" content="#000000" />
-    <link rel="alternate" type="application/rss+xml" title={title} href="/rss.xml" />
     <meta property="og:site_name" content="opencode-shared-browser" />
   </head>
   <body class="min-h-dvh bg-canvas text-fg antialiased">

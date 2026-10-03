@@ -1,0 +1,141 @@
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import Docs from '../../layouts/Docs.astro'
+import CodeBlock from '../../components/CodeBlock.astro'
+---
+
+<Docs
+  title="Install"
+  description="Install opencode-shared-browser: clone the repo, link the launcher and wrapper, register the guard plugin, and point the Playwright MCP at it."
+>
+  <p>
+    Three pieces: a launcher that owns the browser, a wrapper the Playwright MCP
+    invokes, and a plugin that guards tab ownership. The order below matters only
+    for the last step — the browser itself no longer has to be running first.
+  </p>
+
+  <h2>1. Clone and link</h2>
+  <CodeBlock
+    code={`git clone https://github.com/edrayel/opencode-shared-browser ~/dev/opencode-shared-browser
+cp ~/dev/opencode-shared-browser/bin/chrome-cdp-profile ~/bin/
+cp ~/dev/opencode-shared-browser/bin/playwright-mcp-chromium-safe ~/bin/
+cp ~/dev/opencode-shared-browser/plugins/browser-guard.ts ~/.config/opencode/plugins/
+chmod +x ~/bin/chrome-cdp-profile ~/bin/playwright-mcp-chromium-safe`}
+  />
+
+  <h2>2. Register the plugin</h2>
+  <p>Add it to the <code>plugin</code> array in <code>~/.config/opencode/opencode.jsonc</code>:</p>
+  <CodeBlock
+    lang="json"
+    code={`"plugin": [
+  "opencode-supermemory@2.0.15",
+  "/home/you/.config/opencode/plugins/browser-guard.ts"
+]`}
+  />
+
+  <h2>3. Point the MCP at the wrapper</h2>
+  <p>
+    Replace the <code>playwright</code> entry's command. The wrapper passes
+    <code>--cdp-endpoint</code>, and deliberately does not pass
+    <code>--executable-path</code>, <code>--isolated</code>,
+    <code>--user-data-dir</code> or <code>--no-sandbox</code>: in CDP mode the MCP
+    never launches a browser, so those do not apply.
+  </p>
+  <CodeBlock
+    lang="json"
+    code={`"playwright": {
+  "type": "local",
+  "timeout": 30000,
+  "command": ["/home/you/bin/playwright-mcp-chromium-safe"],
+  "enabled": true
+}`}
+  />
+
+  <h2>4. Start the browser</h2>
+  <p>
+    Optional but worth doing, so the first tool call is not waiting on a Chrome
+    launch. If the port is dead when opencode starts, the wrapper starts the
+    browser itself.
+  </p>
+  <CodeBlock code={`$ ~/bin/chrome-cdp-profile
+chrome-cdp-profile: up on 9222 (profile ~/.config/google-chrome-for-testing)`} />
+
+  <h2>Signing in</h2>
+  <p>
+    Point the profile at whatever Chrome holds your sessions. By default the
+    launcher uses a Chrome for Testing profile at
+    <code>~/.config/google-chrome-for-testing</code>. Open it once by hand, sign
+    in, and close it properly — see below.
+  </p>
+  <p>
+    Use a <strong>dedicated profile</strong>, not your daily browser profile.
+    Every opencode instance attached over CDP can act as you.
+  </p>
+
+  <h2>Stopping cleanly</h2>
+  <p>
+    <code>--stop</code> sends CDP <code>Browser.close</code> rather than a signal.
+    This matters more than it sounds:
+  </p>
+  <CodeBlock
+    lang="text"
+    code={`$ pkill -f "remote-debugging-port=9222"     # leaves exit_type unset
+$ ~/bin/chrome-cdp-profile --stop                # records a clean exit`}
+  />
+  <p>
+    A SIGTERM kill leaves <code>exit_type</code> unset in the profile, which
+    Chrome reads as a crash and answers by restoring the previous session —
+    regardless of flags. That is how yesterday's tabs come back as unowned tabs
+    that block every close.
+  </p>
+  <p>
+    Also note that <code>pkill -f "remote-debugging-port=9222"</code> matches its
+    own invoking shell and kills it. Use a bracket pattern if you must:
+    <code>pkill -f '[r]emote-debugging-port=9222'</code>.
+  </p>
+
+  <h2>Verifying</h2>
+  <CodeBlock
+    lang="bash"
+    code={`$ curl -s http://127.0.0.1:9222/json/version | head -2
+$ tail ~/.local/share/opencode/mcp-logs/browser-guard.log`}
+  />
+  <p>
+    Guard decisions are appended to the log, so you can see exactly what was
+    allowed and why something was denied.
+  </p>
+
+  <h2>Environment variables</h2>
+  <table>
+    <thead>
+      <tr><th>Variable</th><th>Default</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>PLAYWRIGHT_MCP_CDP_PORT</code></td><td>9222</td><td>Used by all three</td></tr>
+      <tr><td><code>PLAYWRIGHT_MCP_PROFILE</code></td><td>~/.config/google-chrome-for-testing</td><td>Launcher, wrapper</td></tr>
+      <tr><td><code>PLAYWRIGHT_MCP_MODE</code></td><td>cdp</td><td>Set to <code>local</code> to launch a browser instead of attaching</td></tr>
+      <tr><td><code>PLAYWRIGHT_MCP_LAUNCHER</code></td><td>~/bin/chrome-cdp-profile</td><td>Wrapper's fallback when the port is dead</td></tr>
+      <tr><td><code>BROWSER_GUARD_TTL_MS</code></td><td>900000</td><td>How long a tab claim stays valid</td></tr>
+      <tr><td><code>PLAYWRIGHT_BROWSERS_PATH</code></td><td>~/.cache/ms-playwright</td><td>Where Chromium is resolved from</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Troubleshooting</h2>
+  <p>
+    <strong>The MCP reports no browser on 9222.</strong> It tried to start one
+    and failed. Usually a stale profile lock or a missing Chromium build — run
+    the launcher by hand to see the real error.
+  </p>
+  <p>
+    <strong>No browser tools in the session at all.</strong> opencode drops an
+    MCP that failed during startup, so the tools stay missing until it restarts.
+    The reason is in the MCP log; search for <code>FATAL</code>.
+  </p>
+  <p>
+    <strong>Chromium exits with "No usable sandbox".</strong> Ubuntu 23.10 and
+    later disable unprivileged user namespaces. The launcher passes
+    <code>--no-sandbox</code> already; drop it if your distribution allows
+    sandboxes.
+  </p>
+</Docs>
