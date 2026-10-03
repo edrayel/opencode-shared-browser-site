@@ -1,0 +1,90 @@
+<!--
+  Copyright 2026 Edward Rajah
+  SPDX-License-Identifier: Apache-2.0
+-->
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import '@fontsource/geist-sans/400.css'
+import '@fontsource/geist-sans/500.css'
+import '@fontsource/geist-sans/600.css'
+import '@fontsource/geist-mono/400.css'
+import '@fontsource/geist-mono/500.css'
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+
+const REPO = 'https://github.com/edrayel/opencode-shared-browser'
+const OG = new URL('/og.png', Astro.site ?? 'https://opencode-shared-browser.dev')
+---
+
+<!doctype html>
+<html lang="en" class="bg-canvas">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={Astro.url.pathname} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={Astro.url.pathname} />
+    <meta property="og:image" content={OG} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={OG} />
+
+    <meta name="theme-color" content="#000000" />
+    <link rel="alternate" type="application/rss+xml" title={title} href="/rss.xml" />
+    <meta property="og:site_name" content="opencode-shared-browser" />
+  </head>
+  <body class="min-h-dvh bg-canvas text-fg antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:border focus:border-line-strong focus:bg-surface-1 focus:px-3 focus:py-2 focus:text-sm"
+      >Skip to content</a
+    >
+    <header class="shell flex h-16 items-center justify-between rule">
+      <a href="/" class="flex items-center gap-2.5 font-mono text-sm font-medium tracking-tight">
+        <span class="text-fg-muted">~/bin</span>
+        <span class="text-fg-subtle">/</span>
+        <span>chrome-cdp-profile</span>
+      </a>
+      <nav class="flex items-center gap-6 text-sm">
+        <a href="/docs/install/" class="text-fg-muted hover:text-fg">Install</a>
+        <a href="/docs/guards/" class="text-fg-muted hover:text-fg">Guards</a>
+        <a
+          href={REPO}
+          class="border border-line-strong px-3 py-1.5 font-medium hover:bg-surface-1"
+          rel="noopener">GitHub</a
+        >
+      </nav>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="shell rule mt-24 py-10 text-sm text-fg-subtle">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p>Apache-2.0. MIT-licensed Geist typefaces.</p>
+        <p class="font-mono">
+          <a href={REPO} rel="noopener">edrayel/opencode-shared-browser</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+<!--
+  Copyright 2026 Edward Rajah
+  SPDX-License-Identifier: Apache-2.0
+-->
+// Design tokens for the Vercel Geist system — the canonical developer-marketing
+// system: radius 0, no shadows, hairline borders for elevation, monochrome
+// first, and colour only where it carries meaning.
+//
+// Deviations from Geist, both deliberate:
+//   1. Dark is the default surface, not light. This product is terminal-adjacent.
+//   2. Two semantic accents (allow / deny) rather than one brand accent. The
+//      guard's entire vocabulary is allow vs deny, so colour earns its place
+//      semantically instead of decoratively.
+//
+// Banned by this system: gradients, glows and blobs, all-caps eyebrows, cards
+// nested in cards, a visible theme toggle, emoji icons, and any font or colour
+// not declared here.
+
+@import "tailwindcss";
+
+@theme {
+  // ── Type ────────────────────────────────────────────────────────────────
+  --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  // Documentation-readable base. Not 13px (devtool dense), not 18px (editorial).
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+
+  // ── Surfaces ────────────────────────────────────────────────────────────
+  // Tight near-black ladder. Depth comes from surface steps and borders only.
+  --color-canvas: oklch(0 0 0);
+  --color-surface-1: oklch(0.145 0 0);
+  --color-surface-2: oklch(0.205 0 0);
+  --color-surface-3: oklch(0.255 0 0);
+
+  // ── Text ────────────────────────────────────────────────────────────────
+  --color-fg: oklch(1 0 0);
+  --color-fg-muted: oklch(0.72 0 0);
+  --color-fg-subtle: oklch(0.52 0 0);
+
+  // ── Borders ─────────────────────────────────────────────────────────────
+  // 1px hairlines carry all elevation in both modes. No box-shadow anywhere.
+  --color-line: oklch(0.255 0 0);
+  --color-line-strong: oklch(0.36 0 0);
+
+  // ── Semantic accents ────────────────────────────────────────────────────
+  // Used ONLY for guard verdicts and status. Never decoration.
+  --color-allow: oklch(0.72 0.17 150);
+  --color-deny: oklch(0.78 0.16 75);
+
+  // ── Radius ──────────────────────────────────────────────────────────────
+  // Geist commits to sharp corners. Overriding these to 0 makes that structural
+  // rather than a convention people have to remember.
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-full: 9999px;
+
+  // ── Motion ──────────────────────────────────────────────────────────────
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  /* Geist's most characteristic trait: tracking scales roughly −6% of the type
+     size. Handled per-heading below rather than globally, since it must not
+     apply to body copy. */
+  h1, h2, h3 {
+    font-weight: 600;
+    letter-spacing: -0.06em;
+    line-height: 1.15;
+  }
+
+  h1 { font-size: 3.5rem; letter-spacing: -0.05em; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.25rem; letter-spacing: -0.02em; }
+
+  p { color: var(--color-fg-muted); }
+
+  /* Underlines are the only affordance for links on a hairline surface. */
+  a { color: inherit; text-decoration-color: var(--color-line-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--color-fg); }
+
+  code, pre, kbd { font-family: var(--font-mono); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-fg);
+    outline-offset: 2px;
+  }
+
+  /* Guardrail from the design system: reduce motion rather than assume it. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* One container width for every section. Rhythm comes from spacing, not
+     from each section inventing its own measure. */
+  .shell {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .rule {
+    border-top: 1px solid var(--color-line);
+  }
+}

@@ -1,0 +1,17 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# generated TTF cache (see scripts/generate-assets.py)
+# lives outside the repo already, listed here for completeness
+
+# environment
+.env
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
