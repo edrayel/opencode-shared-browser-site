@@ -1,17 +1,325 @@
 ---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import Base from '../layouts/Base.astro'
+import CodeBlock from '../components/CodeBlock.astro'
+import GuardTable from '../components/GuardTable.astro'
+import Callout from '../components/Callout.astro'
+import logo from '../assets/logo.png'
 
+const REPO = 'https://github.com/edrayel/opencode-shared-browser'
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+  title="opencode-shared-browser — one signed-in Chrome, shared across opencode instances"
+  description="Run several opencode instances against one browser that is already signed in. CDP sharing, plus a guard plugin that stops concurrent agents from destroying each other's tabs."
+>
+  <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+  <section class="shell pt-20 pb-16 sm:pt-28 sm:pb-20">
+    <div class="max-w-3xl">
+      <!-- The detailed mark, not the simplified favicon silhouette: at 72px the
+           full render reads properly and the flat version looks anonymous. -->
+      <img src={logo.src} alt="" width="440" height="265" class="mb-9 w-44" />
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl">
+        One signed-in Chrome,<br />
+        shared across opencode instances.
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-fg-muted">
+        Playwright's MCP launches a browser per session, so pointing two instances
+        at a profile holding real Google accounts makes them fight over an exclusive
+        profile lock — the second one aborts. Launch Chrome once, attach every
+        instance over CDP, and let a guard plugin keep them from interfering.
+      </p>
+      <div class="mt-9 flex flex-wrap items-center gap-3">
+        <a
+          href="/docs/install/"
+          class="bg-fg px-5 py-2.5 font-medium text-canvas transition-opacity hover:opacity-85"
+          >Install</a
+        >
+        <a
+          href={REPO}
+          rel="noopener"
+          class="border border-line-strong px-5 py-2.5 font-medium transition-colors hover:bg-surface-1"
+          >Source on GitHub</a
+        >
+      </div>
+      <p class="mt-4 font-mono text-xs text-fg-subtle">
+        Apache-2.0 · Linux/macOS · no runtime dependency beyond Playwright's own Chromium
+      </p>
+    </div>
+  </section>
+
+  <!-- ── The lock ──────────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <div class="grid gap-12 lg:grid-cols-[22rem_1fr]">
+      <div>
+        <h2>Why not just share a profile?</h2>
+        <p class="mt-4 text-fg-muted">
+          Chromium takes an exclusive lock on a user-data directory. A second
+          process does not degrade gracefully — it refuses to start.
+        </p>
+      </div>
+      <div class="min-w-0">
+        <CodeBlock
+          title="what the second instance sees"
+          code={`ERROR:process_singleton_posix.cc:347] Failed to create
+  .../SingletonLock: File exists (17)
+ERROR:chrome_main_delegate.cc:520] Failed to create a
+  ProcessSingleton for your profile directory. ... Aborting now
+  to avoid profile corruption.`}
+        />
+        <p class="mt-5 text-fg-muted">
+          A profile per instance would dodge the lock, but each profile is a
+          separate sign-in — which defeats the point. Attaching over CDP is the
+          only arrangement that gives N processes one browser with one session.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How it works ──────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <h2>How it works</h2>
+    <ol class="mt-8 grid gap-px border border-line bg-line sm:grid-cols-3">
+      {
+        [
+          {
+            n: '01',
+            t: 'Launch once',
+            d: 'One Chrome process opens the persistent profile with a CDP debugging port. It holds the sign-in.',
+          },
+          {
+            n: '02',
+            t: 'Attach many',
+            d: 'Every opencode instance connects over CDP. Attach works across processes, so each gets its own tab.',
+          },
+          {
+            n: '03',
+            t: 'Guard the tabs',
+            d: 'A plugin hooks tool execution and denies the calls that would break a sibling instance.',
+          },
+        ].map((s) => (
+          <li class="bg-canvas p-6">
+            <span class="font-mono text-xs text-fg-subtle">{s.n}</span>
+            <h3 class="mt-3 text-fg">{s.t}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-fg-muted">{s.d}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="mt-6">
+      <CodeBlock
+        title="the wrapper starts the browser if it is down"
+        code={`$ ~/bin/chrome-cdp-profile
+chrome-cdp-profile: up on 9222 (profile ~/.config/google-chrome-for-testing)
+
+# opencode attaches; no restart ordering to remember
+playwright-mcp: no Chrome on 9222 — starting it via ~/bin/chrome-cdp-profile
+playwright-mcp: started Chrome on 9222
+playwright-mcp: mode=cdp endpoint=http://127.0.0.1:9222`}
+      />
+    </div>
+  </section>
+
+  <!-- ── The problem sharing creates ───────────────────────────────────── -->
+  <section class="shell py-16">
+    <h2>Sharing means really sharing</h2>
+    <p class="mt-4 max-w-2xl text-fg-muted">
+      Every attached instance sees every tab. Cookies,
+      <code class="font-mono text-sm">localStorage</code> and IndexedDB are one
+      bucket. Left alone, two agents on the same site will clobber each other —
+      and one instance ending its session can kill the browser for everyone.
+    </p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class="min-w-0">
+        <CodeBlock
+          title="two clients, one browser"
+        code={`A sees pages: 3
+B sees pages: 3
+same target list? true
+B reads A localStorage: set-by-A`}
+        />
+      </div>
+      <div class="flex flex-col gap-6">
+        <Callout label="measured" tone="measured">
+          Two independent CDP clients each opened a tab. Both clients reported
+          all three tabs, and a value written by A in <code class="font-mono text-xs"
+            >localStorage</code
+          > was readable by B on the same origin.
+        </Callout>
+        <Callout label="design" tone="limit">
+          That is not a bug in the sharing — it is inherent to it. The guard's job
+          is to stop the two destructive cases: closing someone else's tab, and
+          taking the browser down with you.
+        </Callout>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── The index problem ─────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <div class="grid gap-12 lg:grid-cols-[22rem_1fr]">
+      <div>
+        <h2>Why tab ownership cannot be verified</h2>
+        <p class="mt-4 text-fg-muted">
+          The obvious implementation checks the tab index against a list of
+          targets you own. That does not work, and it fails silently.
+        </p>
+      </div>
+      <div class="min-w-0">
+        <div class="border border-line">
+          <div class="rule px-4 py-3 font-mono text-xs text-fg-subtle">
+            two tabs, two different orderings
+          </div>
+          <div class="grid gap-0 sm:grid-cols-2">
+            <div class="p-4">
+              <p class="font-mono text-xs text-fg-subtle">MCP reports</p>
+              <pre class="mt-3 text-sm leading-relaxed text-fg"><code>{`[0] pricing
+[1] about`}</code></pre>
+            </div>
+            <div class="rule p-4 sm:border-l">
+              <p class="font-mono text-xs text-fg-subtle">CDP /json/list</p>
+              <pre class="mt-3 text-sm leading-relaxed text-fg"><code>{`[0] about
+[1] pricing`}</code></pre>
+            </div>
+          </div>
+        </div>
+        <Callout label="the bug this caused" tone="limit">
+          Looking an MCP index up in the CDP array validates the wrong tab. Our
+          first version closed an unowned <code class="font-mono text-xs"
+            >about:blank</code
+          > while its log reported closing an owned one.
+        </Callout>
+        <p class="mt-5 text-fg-muted">
+          Since <code class="font-mono text-sm">browser_tabs close</code> accepts
+          no target ID, there is no way to address one specific tab and prove it is
+          yours. So the guard allows a close only when every live tab is either
+          claimed by this session or inert — then whatever closes is ours by
+          definition.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Guards ────────────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <h2>The rules, enforced</h2>
+    <p class="mt-4 mb-8 max-w-2xl text-fg-muted">
+      Prompts asking an agent to be careful are not enforcement. The plugin hooks
+      tool execution and throws, so a denied call cannot be talked past. Every
+      decision is appended to a log.
+    </p>
+    <GuardTable />
+  </section>
+
+  <!-- ── Verification ──────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <div class="grid gap-12 lg:grid-cols-[22rem_1fr]">
+      <div>
+        <h2>How it is tested</h2>
+        <p class="mt-4 text-fg-muted">
+          The guard's behaviour is a pure function of the tool, its arguments, the
+          session and the live tabs — so the suite drives the real plugin from
+          separate long-lived processes instead of spawning agents.
+        </p>
+      </div>
+      <div class="min-w-0">
+        <CodeBlock
+          title="test/run.sh — three instances race to close"
+          lang="text"
+          code={`== concurrent instances: 3-way race ==
+  round 1: denied=3/3   tabs 1 -> 4
+  PASS  round 1: every instance denied
+  PASS  round 1: no tab destroyed
+  round 2: denied=3/3   tabs 1 -> 4
+  PASS  round 2: every instance denied
+  PASS  round 2: no tab destroyed
+
+passed: 8   failed: 0`}
+        />
+        <p class="mt-5 text-fg-muted">
+          Each round asserts both the decision and the resulting browser state, so
+          a run only passes if no tab was destroyed along the way.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Honest limits ─────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <h2>Known limitations</h2>
+    <p class="mt-4 mb-8 max-w-2xl text-fg-muted">
+      Published rather than buried. Two of these are inherent to sharing one
+      browser, and no amount of guarding removes them.
+    </p>
+    <div class="grid gap-6 sm:grid-cols-2">
+      {
+        [
+          {
+            t: 'A blank tab mid-navigation is closable',
+            d: 'about:blank is treated as inert, so if another instance is navigating, its tab can briefly read as closable. The window is narrow but real.',
+          },
+          {
+            t: 'Same-URL tabs are indistinguishable',
+            d: 'Ownership is tracked by URL. Two tabs on the same site cannot be told apart, so a same-site instance could have its tab closed.',
+          },
+          {
+            t: 'Storage is shared by design',
+            d: 'Cookies, localStorage and IndexedDB are one bucket across instances. Unrelated domains are unaffected; the same origin is not.',
+          },
+          {
+            t: 'The profile has real credentials',
+            d: 'Every attached instance can act as you. Use a dedicated profile, not your daily browser profile.',
+          },
+        ].map((l) => (
+          <div class="border border-line p-5">
+            <h3 class="text-base">{l.t}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-fg-muted">{l.d}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ── Install ───────────────────────────────────────────────────────── -->
+  <section class="shell py-16">
+    <h2>Install</h2>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <div class="min-w-0">
+        <CodeBlock
+          title="clone and link"
+          code={`git clone <repo> ~/dev/opencode-shared-browser
+cp bin/chrome-cdp-profile bin/playwright-mcp-chromium-safe ~/bin/
+cp plugins/browser-guard.ts ~/.config/opencode/plugins/
+chmod +x ~/bin/chrome-cdp-profile ~/bin/playwright-mcp-chromium-safe`}
+        />
+      </div>
+      <div class="min-w-0">
+        <CodeBlock
+          title="start the browser"
+          code={`$ ~/bin/chrome-cdp-profile
+chrome-cdp-profile: up on 9222
+
+$ ~/bin/chrome-cdp-profile --stop   # graceful shutdown`}
+        />
+      </div>
+    </div>
+    <p class="mt-6 text-fg-muted">
+      Then point the Playwright MCP at the wrapper — see
+      <a href="/docs/install/" class="text-fg underline">the install guide</a> for
+      the config snippet and the environment variables.
+    </p>
+  </section>
+
+  <section class="shell rule py-16">
+    <div class="flex flex-wrap items-center justify-between gap-6">
+      <h2 class="text-2xl">Apache-2.0, and yours to fork.</h2>
+      <a
+        href={REPO}
+        rel="noopener"
+        class="border border-line-strong px-5 py-2.5 font-medium transition-colors hover:bg-surface-1"
+        >edrayel/opencode-shared-browser</a
+      >
+    </div>
+  </section>
+</Base>

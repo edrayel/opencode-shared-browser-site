@@ -1,0 +1,26 @@
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * A callout for measured findings and known limits. Geist forbids colour as
+ * decoration, so the tone is expressed in the label and the left rule rather
+ * than in a coloured panel.
+ */
+interface Props {
+  label: string
+  tone?: 'note' | 'measured' | 'limit'
+}
+const { label, tone = 'note' } = Astro.props
+
+const marks: Record<string, string> = {
+  note: 'text-fg-subtle',
+  measured: 'text-allow',
+  limit: 'text-deny',
+}
+---
+
+<aside class="border border-line border-l-2 border-l-line-strong bg-surface-1 px-4 py-3.5">
+  <p class:list={['font-mono text-xs tracking-wide uppercase', marks[tone]]}>{label}</p>
+  <div class="mt-2 text-sm leading-relaxed text-fg-muted"><slot /></div>
+</aside>

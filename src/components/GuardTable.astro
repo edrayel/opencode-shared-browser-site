@@ -1,0 +1,32 @@
+---
+// Copyright 2026 Edward Rajah
+// SPDX-License-Identifier: Apache-2.0
+import { GUARDS } from '../data/guards'
+---
+
+<div class="border border-line">
+  <div class="rule grid grid-cols-[7rem_1fr] gap-x-6 px-4 py-3 font-mono text-xs text-fg-subtle">
+    <span>verdict</span><span>rule</span>
+  </div>
+  {
+    GUARDS.map((g) => (
+      <div class="rule grid grid-cols-[7rem_1fr] gap-x-6 px-4 py-4">
+        <span
+          class:list={[
+            'font-mono text-xs font-medium tracking-wide uppercase',
+            g.verdict === 'allow' ? 'text-allow' : 'text-deny',
+          ]}
+        >
+          {g.verdict}
+        </span>
+        <div>
+          <p class="font-medium">
+            {g.rule}
+            <code class="ml-2 font-mono text-xs text-fg-subtle">{g.call}</code>
+          </p>
+          <p class="mt-1.5 text-sm leading-relaxed text-fg-muted">{g.why}</p>
+        </div>
+      </div>
+    ))
+  }
+</div>
