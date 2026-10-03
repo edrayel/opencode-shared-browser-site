@@ -93,10 +93,13 @@ const current = Astro.url.pathname
     color: var(--color-fg);
     font-weight: 500;
   }
+  /* Inline code must be allowed to wrap. Long values (a flag list, a filename)
+     otherwise push the measure wider than the viewport on small screens. */
   .prose :not(pre) > code {
     font-size: 0.8125rem;
     background: var(--color-surface-2);
     padding: 0.1rem 0.35rem;
+    overflow-wrap: anywhere;
   }
   .prose table {
     width: 100%;
