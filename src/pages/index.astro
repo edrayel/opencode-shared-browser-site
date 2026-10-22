@@ -5,7 +5,6 @@ import Base from '../layouts/Base.astro'
 import CodeBlock from '../components/CodeBlock.astro'
 import GuardTable from '../components/GuardTable.astro'
 import Callout from '../components/Callout.astro'
-import logo from '../assets/logo.png'
 
 const REPO = 'https://github.com/edrayel/opencode-shared-browser'
 ---
@@ -19,7 +18,7 @@ const REPO = 'https://github.com/edrayel/opencode-shared-browser'
     <div class="max-w-3xl">
       <!-- The detailed mark, not the simplified favicon silhouette: at 72px the
            full render reads properly and the flat version looks anonymous. -->
-      <img src={logo.src} alt="" width="440" height="265" class="mb-9 w-44" />
+      <img src="/logo.svg" alt="opencode-shared-browser logo" width="120" height="72" class="mb-9 w-32" />
       <h1 class="text-4xl sm:text-5xl lg:text-6xl">
         One signed-in Chrome,<br />
         shared across opencode instances.
