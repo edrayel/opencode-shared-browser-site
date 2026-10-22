@@ -1,14 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" role="img" aria-label="opencode-shared-browser">
   <defs>
+    <!-- Chromium brand colors -->
     <linearGradient id="ringLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6BBF9A" />
-      <stop offset="50%" stop-color="#509A7C" />
-      <stop offset="100%" stop-color="#3A7A5E" />
+      <stop offset="0%" stop-color="#5A9BF6" />
+      <stop offset="50%" stop-color="#4285F4" />
+      <stop offset="100%" stop-color="#3367D6" />
     </linearGradient>
     <linearGradient id="ringRight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E8A84A" />
-      <stop offset="50%" stop-color="#D58F32" />
-      <stop offset="100%" stop-color="#B8741E" />
+      <stop offset="0%" stop-color="#F06A5F" />
+      <stop offset="50%" stop-color="#EA4335" />
+      <stop offset="100%" stop-color="#C5221F" />
+    </linearGradient>
+    <linearGradient id="codeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4285F4" />
+      <stop offset="33%" stop-color="#FBBC05" />
+      <stop offset="66%" stop-color="#34A853" />
+      <stop offset="100%" stop-color="#EA4335" />
     </linearGradient>
     <filter id="glowLeft" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="3" result="blur" />
@@ -18,36 +25,32 @@
       <feGaussianBlur stdDeviation="3" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
-    <linearGradient id="codeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6BBF9A" />
-      <stop offset="100%" stop-color="#E8A84A" />
-    </linearGradient>
   </defs>
 
   <!-- Background subtle glow -->
-  <ellipse cx="32" cy="48" rx="32" ry="32" fill="#509A7C" opacity="0.04" />
-  <ellipse cx="88" cy="48" rx="32" ry="32" fill="#D58F32" opacity="0.04" />
+  <ellipse cx="32" cy="48" rx="32" ry="32" fill="#4285F4" opacity="0.04" />
+  <ellipse cx="88" cy="48" rx="32" ry="32" fill="#EA4335" opacity="0.04" />
 
-  <!-- Left ring (green) -->
+  <!-- Left ring (Chromium blue) -->
   <g>
     <circle cx="32" cy="48" r="26" fill="none" stroke="url(#ringLeft)" stroke-width="5"
             stroke-dasharray="163" stroke-dashoffset="163" stroke-linecap="round">
       <animate attributeName="stroke-dashoffset" from="163" to="0" dur="1.0s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1" />
     </circle>
-    <circle cx="32" cy="48" r="26" fill="none" stroke="#6BBF9A" stroke-width="1.5" opacity="0"
+    <circle cx="32" cy="48" r="26" fill="none" stroke="#5A9BF6" stroke-width="1.5" opacity="0"
             stroke-dasharray="40 123" stroke-dashoffset="0">
       <animate attributeName="opacity" from="0" to="0.6" dur="0.4s" begin="0.8s" fill="freeze" />
       <animateTransform attributeName="transform" type="rotate" from="0 32 48" to="360 32 48" dur="8s" repeatCount="indefinite" />
     </circle>
   </g>
 
-  <!-- Right ring (orange) -->
+  <!-- Right ring (Chrome red) -->
   <g>
     <circle cx="88" cy="48" r="26" fill="none" stroke="url(#ringRight)" stroke-width="5"
             stroke-dasharray="163" stroke-dashoffset="163" stroke-linecap="round">
       <animate attributeName="stroke-dashoffset" from="163" to="0" dur="1.0s" begin="0.25s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1" />
     </circle>
-    <circle cx="88" cy="48" r="26" fill="none" stroke="#E8A84A" stroke-width="1.5" opacity="0"
+    <circle cx="88" cy="48" r="26" fill="none" stroke="#F06A5F" stroke-width="1.5" opacity="0"
             stroke-dasharray="40 123" stroke-dashoffset="0">
       <animate attributeName="opacity" from="0" to="0.6" dur="0.4s" begin="1.05s" fill="freeze" />
       <animateTransform attributeName="transform" type="rotate" from="0 88 48" to="-360 88 48" dur="10s" repeatCount="indefinite" />
