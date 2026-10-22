@@ -15,17 +15,33 @@ import CodeBlock from '../../components/CodeBlock.astro'
     for the last step — the browser itself no longer has to be running first.
   </p>
 
-  <h2>1. Clone and link</h2>
+  <h2>1. One-step install (recommended)</h2>
+  <CodeBlock
+    code={`git clone https://github.com/edrayel/opencode-shared-browser ~/dev/opencode-shared-browser
+~/dev/opencode-shared-browser/bin/install.sh`}
+  />
+  <p>
+    The installer deploys the launcher, MCP wrapper, idle watchdog and guard plugin,
+    then wires both <code>~/.config/opencode/opencode.jsonc</code> and
+    <code>~/.config/kilo/kilo.jsonc</code> (enabling the Playwright MCP in each).
+  </p>
+
+  <h2>1b. Manual install</h2>
   <CodeBlock
     code={`git clone https://github.com/edrayel/opencode-shared-browser ~/dev/opencode-shared-browser
 cp ~/dev/opencode-shared-browser/bin/chrome-cdp-profile ~/bin/
 cp ~/dev/opencode-shared-browser/bin/playwright-mcp-chromium-safe ~/bin/
+cp ~/dev/opencode-shared-browser/bin/chrome-cdp-idle-watchdog ~/bin/
 cp ~/dev/opencode-shared-browser/plugins/browser-guard.ts ~/.config/opencode/plugins/
-chmod +x ~/bin/chrome-cdp-profile ~/bin/playwright-mcp-chromium-safe`}
+cp ~/dev/opencode-shared-browser/plugins/browser-guard.ts ~/.config/kilo/plugins/
+chmod +x ~/bin/chrome-cdp-profile ~/bin/playwright-mcp-chromium-safe ~/bin/chrome-cdp-idle-watchdog`}
   />
 
   <h2>2. Register the plugin</h2>
-  <p>Add it to the <code>plugin</code> array in <code>~/.config/opencode/opencode.jsonc</code>:</p>
+  <p>
+    Add it to the <code>plugin</code> array in <code>~/.config/opencode/opencode.jsonc</code>
+    and <code>~/.config/kilo/kilo.jsonc</code>:
+  </p>
   <CodeBlock
     lang="json"
     code={`"plugin": [
@@ -95,6 +111,14 @@ $ ~/bin/chrome-cdp-profile --stop                # records a clean exit`}
     <code>pkill -f '[r]emote-debugging-port=9222'</code>.
   </p>
 
+  <h2>Uninstalling</h2>
+  <CodeBlock code={`~/dev/opencode-shared-browser/bin/uninstall.sh`} />
+  <p>
+    Stops the browser cleanly and removes the installed binaries and guard plugins.
+    Config entries are left intact unless
+    <code>PLAYWRIGHT_UNINSTALL_PURGE_CONFIG=1</code> is set.
+  </p>
+
   <h2>Verifying</h2>
   <CodeBlock
     lang="bash"
@@ -118,6 +142,8 @@ $ tail ~/.local/share/opencode/mcp-logs/browser-guard.log`}
       <tr><td><code>PLAYWRIGHT_MCP_LAUNCHER</code></td><td>~/bin/chrome-cdp-profile</td><td>Wrapper's fallback when the port is dead</td></tr>
       <tr><td><code>BROWSER_GUARD_TTL_MS</code></td><td>900000</td><td>How long a tab claim stays valid</td></tr>
       <tr><td><code>PLAYWRIGHT_BROWSERS_PATH</code></td><td>~/.cache/ms-playwright</td><td>Where Chromium is resolved from</td></tr>
+      <tr><td><code>PLAYWRIGHT_IDLE_TTL_MS</code></td><td>900000</td><td>Idle time before Chrome is stopped</td></tr>
+      <tr><td><code>PLAYWRIGHT_IDLE_POLL_MS</code></td><td>30000</td><td>Watchdog poll interval</td></tr>
     </tbody>
   </table>
 
@@ -134,8 +160,10 @@ $ tail ~/.local/share/opencode/mcp-logs/browser-guard.log`}
   </p>
   <p>
     <strong>Chromium exits with "No usable sandbox".</strong> Ubuntu 23.10 and
-    later disable unprivileged user namespaces. The launcher passes
-    <code>--no-sandbox</code> already; drop it if your distribution allows
-    sandboxes.
+    later restrict unprivileged user namespaces via AppArmor. Install the shipped
+    profile (<code>/etc/apparmor.d/playwright-chromium</code>) and reload it:
+    <code>sudo apparmor_parser -r /etc/apparmor.d/playwright-chromium</code>.
+    If sandbox is still unavailable, add <code>--no-sandbox</code> back to the
+    launcher.
   </p>
 </Docs>
